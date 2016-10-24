@@ -1,0 +1,18 @@
+{
+  "extends": ["standard", "standard-react"],
+  "parser": "babel-eslint",
+  "ecmaFeatures": {
+      "classes": true,
+      "jsx": true
+  },
+  "plugins": ["react"],
+  "rules": {
+    "key-spacing": ["error", {
+      "align": {
+        "beforeColon": true,
+        "afterColon": true,
+        "on": "colon"
+      }
+    }]
+  }
+}

@@ -1,0 +1,27 @@
+value
+errors
+errors.groups
+pristine
+onChange(value, pristine) - eval pristine, set value
+onError(errs, group) - report errors
+check() - eval pristine
+
+  <Validate validators={[notEmpty, email]}>
+    {({value, errors, pristine}) => (
+      <input type="text"
+        value={value}
+        onChange={doSomething} />
+    )}
+  </Validate>
+
+  <Validate>
+    {({errors, pristine, onError}) => {
+      <div>
+        <Validate pristine={pristine} onError={onError}></Validate>
+        <Validate pristine={pristine} onError={onError}></Validate>
+        <button onClick={check() && submit()}>
+          Submit
+        </button>
+      </div>
+    }}
+  </Validate>
