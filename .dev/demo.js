@@ -3,7 +3,7 @@ import {render} from 'react-dom'
 
 import Validate from '../'
 
-function required (value) {
+function required (value, values) {
   if (!value) return 'Empty'
 }
 
@@ -26,27 +26,61 @@ class App extends Component {
   }
 
   render () {
-    const {value} = this.state
+    const stateValue = this.state.value
     return (
       <div>
-        Hello
-        <Validate>
-          {({check, pristine}) => (
+        <xmp>{`
+state.value: ${JSON.stringify(stateValue)}
+        `}</xmp>
+
+        <h3>simple</h3>
+        <Validate validators={[required, email, minlen(4)]}
+          value={stateValue}
+          onChange={value => this.setState({value})}>
+          {({name, value, onChange, errors, valid, pristine}) => (
             <div>
-              <Validate name='fff'
-                pristine={pristine}
-                value={value}
-                onChange={value => this.setState({value})}
-                validators={[required, email, minlen(4)]}>
-                {({value, onChange, errors, pristine}) => (
+              <input type='text' value={value} onChange={e => onChange(e.target.value)} />
+              <xmp>{`
+name:     ${JSON.stringify(name)}
+value:    ${JSON.stringify(value)}
+valid:    ${JSON.stringify(valid)}
+pristine: ${JSON.stringify(pristine)}
+errors:   ${JSON.stringify(errors)}
+              `}</xmp>
+            </div>
+          )}
+        </Validate>
+
+        <h3>not so simple</h3>
+        <Validate name='group'>
+          {({name, check, value, valid, pristine, errors, children, group}) => (
+            <div>
+              <Validate validators={[required, email, minlen(4)]}
+                name='field'
+                parent={group}
+                value={stateValue}>
+                {({name, value, values, onChange, errors, valid, pristine}) => (
                   <div>
-                    <input type='text' value={value} onChange={e => onChange(e.target.value)} />
-                    <p>{pristine ? 'pristine' : 'dirty'}</p>
-                    {!pristine && <p>Errors: {errors.join(', ')}</p>}
+                    <input type='text' value={value} onChange={e => onChange(e.target.value)} />{!pristine && ' dirty'}
+                    <xmp>{`
+name:     ${JSON.stringify(name)}
+value:    ${JSON.stringify(value)}
+valid:    ${JSON.stringify(valid)}
+pristine: ${JSON.stringify(pristine)}
+errors:   ${JSON.stringify(errors)}
+                    `}</xmp>
                   </div>
                 )}
               </Validate>
               <button onClick={() => { check() && this.submit() }}>Submit</button>
+              <xmp>{`
+group.name:     ${JSON.stringify(name)}
+group.value:    ${JSON.stringify(value)}
+group.valid:    ${JSON.stringify(valid)}
+group.pristine: ${JSON.stringify(pristine)}
+group.errors:   ${JSON.stringify(errors)}
+group.children: ${JSON.stringify(children)}
+              `}</xmp>
             </div>
           )}
         </Validate>

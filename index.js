@@ -1,38 +1,42 @@
 import {Component, PropTypes} from 'react'
 
-const errorsArr = (groups = {}) => {
-  const errors = Object.keys(groups)
-    .reduce((errors, group) => errors.concat(groups[group]), [])
-
-  return Object.assign(errors, {groups})
-}
+const defaultName = () => 'validate-' + (Math.random() + '').slice(2, 7)
 
 class Validate extends Component {
 
   static propTypes = {
-    children   : PropTypes.func.isRequired,
-    name       : PropTypes.string,
+    children : PropTypes.func.isRequired,
+    name     : PropTypes.string,
+    parent   : PropTypes.shape({
+      name     : PropTypes.string,
+      onChange : PropTypes.func
+    }),
     onChange   : PropTypes.func,
-    onError    : PropTypes.func,
     pristine   : PropTypes.bool,
     validators : PropTypes.arrayOf(PropTypes.func),
     value      : PropTypes.any
   }
 
   static defaultProps = {
-    onError    : () => undefined,
-    pristine   : true,
+    parent     : null,
     validators : [],
-    value      : null
+    value      : null,
+    onChange   : () => undefined
   }
 
   constructor (...args) {
     super(...args)
-    this.name = this.props.name || 'validate-' + Math.random().toString().slice(2, 7)
+
+    const {name, value} = this.props
+    const errors = this._getError(this.props.value)
+
+    this.name = name || defaultName()
     this.state = {
-      value    : this.props.value,
-      errors   : this.getErrors(this.props.value),
-      pristine : true
+      value,
+      errors,
+      members  : {},
+      pristine : true,
+      valid    : errors.length === 0
     }
   }
 
@@ -41,40 +45,92 @@ class Validate extends Component {
     return this.state.errors.length > 0
   }
 
-  onChange = value => {
-    const errors = this.getErrors(value)
+  onChange = (value, silent = false) => {
+    const {parent, onChange} = this.props
 
-    this.setState({value, errors, pristine: false})
-    this.onError(errors, this.name)
+    const errors = this._getError(value)
+    const valid = errors.length === 0 && this._validateMembers(this.state.members)
+    const pristine = this.state.pristine && silent
+
+    this.setState({errors, pristine, valid, value})
+
+    if (valid) onChange(value)
+    if (parent) parent.report(this.name, {...this.state, errors, pristine, valid, value})
   }
 
-  onError = (errors, group = this.name) => {
-    const groups = {...this.state.errors.groups, [group]: errors}
+  onReport = (name, state) => {
+    const {parent} = this.props
 
-    this.setState({errors: errorsArr(groups)})
-    this.props.onError(this.state.errors, this.name)
+    const members = {...this.state.members, [name]: state}
+    const valid = this.state.errors.length === 0 && this._validateMembers(members)
+
+    this.setState({members, valid})
+    if (parent) parent.report(this.name, {...this.state, members, valid})
   }
 
-  getErrors (value) {
-    const {validators} = this.props
-    return validators.reduce((errors, validate) => {
-      const error = validate(value, this.name)
-      if (error !== undefined) errors.push(error + '')
-      return errors
-    }, [])
+  onLeave = name => {
+    if (!this.state.members[name]) return
+    const members = {...this.state.members}
+    delete members[name]
+    this.setState({members})
+  }
+
+  componentDidMount () {
+    const {parent} = this.props
+    if (parent) parent.report(this.name, this.state)
+  }
+
+  componentWillUnmount () {
+    const {parent} = this.props
+    if (parent) parent.leave(this.name)
+  }
+
+  componentWillReceiveProps (nextProps) {
+    const {value, parent} = nextProps
+
+    if (value === this.props.value) return
+
+    const errors = this._getError(value)
+    const valid = errors.length === 0 && this._validateMembers(this.state.members)
+    const pristine = true
+
+    this.setState({errors, pristine, valid, value})
+    if (parent) parent.report(this.name, {...this.state, errors, pristine, valid, value})
   }
 
   render () {
-    const {children: render} = this.props
-
-    return render({
-      value    : this.state.value,
-      errors   : this.state.errors,
-      pristine : this.props.pristine && this.state.pristine,
+    const {parent, children: render} = this.props
+    const opts = {
+      name     : this.name,
       check    : this.check,
+      errors   : this.state.errors,
+      members  : this.state.members,
       onChange : this.onChange,
-      onError  : this.onError
-    })
+      pristine : (!parent || parent.pristine) && this.state.pristine,
+      valid    : this.state.valid,
+      value    : this.state.value
+    }
+
+    opts.group = {
+      pristine : opts.pristine,
+      report   : this.onReport
+    }
+
+    return render(opts)
+  }
+
+  _validateMembers (members) {
+    for (let name in members) if (!members[name].valid) return false
+    return true
+  }
+
+  _getError (value) {
+    return this.props.validators
+      .reduce((errors, validate) => {
+        const error = validate(value, this.name)
+        if (error !== undefined) errors.push(error + '')
+        return errors
+      }, [])
   }
 }
 
