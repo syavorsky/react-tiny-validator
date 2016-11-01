@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <link href="./styles.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.18.1/babel.min.js"></script>
+  <script src="https://fb.me/react-15.1.0.js"></script>
+  <script src="https://fb.me/react-dom-15.1.0.js"></script>
+  <script>
+    // Demo workaround, fix UMD exports
+    window.react = React
+    window['react-dom'] = ReactDOM
+  </script>
+  <script src="../es5/index.js"></script>
+  <title>react-tiny-validator</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="text/babel" data-presets="es2015,stage-0,react">
+    // Demo workaround, fix imports
+    // Normally use:
+    //
+    // import Validate from 'react-tiny-validator'
+    // import Raact, {Component, PropTypes} from 'react
+    // import {render} from 'react-dom'
+
+    const {default:Validate} = window['react-tiny-validator']
+    const React = window['react']
+    const {Component, PropTypes} = window['react']
+    const {render} = window['react-dom']
+
+    const required = name => value => {
+      if (!value) `${name} is required`
+    }
+
+    const App = () => (
+      <Validate>
+        {({errors, valid, check, pristine, group, members}) => {
+          const {first, middle, last} = members
+          const fullName = valid ? `${first.value} ${middle.value} ${last.value}` : ''
+          console.log('errors', errors)
+
+          return (
+            <form onSubmit={e => {
+              e.preventDefault()
+              if (check()) alert('Submitting: ' + fullName)
+            }}>
+              <h2 className={pristine ? '' : (valid ? 'valid' : 'invalid')}>
+                Full name : <b>{JSON.stringify(fullName)}</b>
+              </h2>
+              <p>Feel all fields, validate on Submit</p>
+              <Validate name="first" parent={group}
+                value={''} validators={[required('First name')]}>
+                {({value, onChange}) => (
+                  <input type="text"
+                    placeholder="First name"
+                    value={value} onChange={e => onChange(e.target.value)} />
+                )}
+              </Validate>
+              <Validate name="middle" parent={group}
+                value={''} validators={[required('Middle name')]}>
+                {({value, onChange}) => (
+                  <input type="text"
+                    placeholder="Middle name"
+                    value={value} onChange={e => onChange(e.target.value)} />
+                )}
+              </Validate>
+              <Validate name="last" parent={group}
+                value={''} validators={[required('Last name')]}>
+                {({value, onChange}) => (
+                  <input type="text"
+                    placeholder="Last name"
+                    value={value} onChange={e => onChange(e.target.value)} />
+                )}
+              </Validate>
+              <p>Is pristine: {pristine ? 'YES' : 'NO'}</p>
+              {!pristine && !valid && (
+                <ul className="invalid">
+                  {errors.map(error => <li key={error}>{error}</li>)}
+                </ul>
+              )}
+              <button>Submit</button>
+            </form>
+          )
+        }}
+      </Validate>
+    )
+
+    render(<App />, document.getElementById('app'))
+  </script>
+</body>
+</html>

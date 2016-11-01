@@ -4,7 +4,7 @@
   "description": "Tiny generic validaton helper for React",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server --hot --inline --config .dev/webpack.conf.js",
+    "start": "webpack-dev-server --config .dev/webpack.conf.js",
     "test": "npm run test:eslint",
     "test:eslint": "eslint index.js .dev"
   },

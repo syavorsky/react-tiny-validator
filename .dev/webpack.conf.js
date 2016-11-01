@@ -1,20 +1,17 @@
 
 const path = require('path')
 
-const prod = process.env.NODE_ENV === 'production'
+const isProd = process.env.NODE_ENV === 'production'
 
 module.exports = {
-  entry: prod ? {
+  entry: {
     index: './index.js'
-  } : {
-    index : './index.js',
-    demo  : './.dev/demo.js'
   },
-  devtool : prod ? 'source-map' : 'eval',
+  devtool : isProd ? 'source-map' : 'eval',
   output  : {
     path          : path.resolve('es5'),
     filename      : '[name].js',
-    publicPath    : '/',
+    publicPath    : '/es5/',
     library       : process.env.npm_package_name,
     libraryTarget : 'umd'
   },
@@ -26,11 +23,7 @@ module.exports = {
       exclude : /node_modules/
     }]
   },
-  plugins: prod ? [] : [
-    new (require('html-webpack-plugin'))({
-      filename : 'index.html',
-      template : '.dev/demo.html'
-    }),
+  plugins: isProd ? [] : [
     new (require('webpack-notifier'))()
   ]
 }
