@@ -2,16 +2,38 @@ import {Component, PropTypes} from 'react'
 
 const defaultName = () => 'validate-' + (Math.random() + '').slice(2, 7)
 
-const validateMembers = (value, members) => Object.keys(members)
-  .reduce((errors, name) => {
-    console.log(name, members[name].errors)
-    return [...errors, ...members[name].errors]
-  }, [])
+const warn = (...args) => {
+  if (typeof console !== 'undefined' && console.warn) console.warn(...args)
+}
+
+const missingPromise = () => {
+  const msg = [
+    'Missing a Promise binding!',
+    'You should either have global \'Promise\' available',
+    'or introduce custom one as \'Validate.usePromise(Promise)\''
+  ].join('\n')
+
+  warn(msg)
+  throw new Error('Missing a Promise binding')
+}
+
+missingPromise.all = missingPromise
+
+const validateMembers = (value, members) => {
+  const errors = Object.keys(members)
+    .reduce((errors, name) => {
+      return [...errors, ...members[name].errors]
+    }, [])
+  return errors
+}
+
+const aborted = new Error('validation aborted')
 
 class Validate extends Component {
 
   static propTypes = {
     children : PropTypes.func.isRequired,
+    explicit : PropTypes.bool,
     name     : PropTypes.string,
     parent   : PropTypes.shape({
       name     : PropTypes.string,
@@ -19,6 +41,7 @@ class Validate extends Component {
     }),
     onChange   : PropTypes.func,
     pristine   : PropTypes.bool,
+    valid      : PropTypes.bool,
     validators : PropTypes.arrayOf(PropTypes.func),
     value      : PropTypes.any
   }
@@ -26,8 +49,16 @@ class Validate extends Component {
   static defaultProps = {
     parent     : null,
     validators : [validateMembers],
-    value      : null,
+    value      : '',
+    explicit   : false,
     onChange   : () => undefined
+  }
+
+  static Promise = typeof Promise === 'undefined' ? missingPromise : Promise
+
+  static usePromise = Promise => {
+    Validate.Promise = Promise
+    return Validate
   }
 
   constructor (...args) {
@@ -39,78 +70,85 @@ class Validate extends Component {
     this.state = {
       value,
       members  : {},
-      pristine : true
+      pristine : true,
+      pending  : false,
+      valid    : this.props.value !== undefined ? this.props.value : true,
+      errors   : []
     }
 
-    const errors = this._getError(this.props.value)
-    this.state.errors = errors
-    this.state.valid = errors.length === 0
+    this._validationRun = 0
   }
 
   check = () => {
     this.setState({pristine: false})
-    return this.state.valid
+    const {value, members} = this.state
+    return this._validate(value, members).then(() => {
+      this.props.onChange(value, this.state.valid)
+      return this.state.valid
+    })
   }
 
   onChange = (value, silent = false) => {
-    const {parent, onChange} = this.props
+    const {explicit, onChange} = this.props
+    if (explicit) return this.setState({value})
 
-    const errors = this._getError(value, this.state.members)
-    const valid = errors.length === 0
-    const pristine = this.state.pristine && silent
+    const {pristine, members} = this.state
 
-    this.setState({errors, pristine, valid, value})
-
-    onChange(value, valid)
-    if (parent) parent.report(this.name, {...this.state, errors, pristine, valid, value})
+    this.setState(state => ({...state,
+      value,
+      pristine: pristine && silent
+    }), () => {
+      this._validate(value, members).then(() => {
+        onChange(this.state.value, this.state.valid)
+      })
+    })
   }
 
-  onReport = (name, member) => {
-    const {parent} = this.props
+  onReport = (name, member, pristine) => {
+    const {explicit} = this.props
 
-    this.setState(state => {
-      const members = {...state.members, [name]: member}
-      const errors = this._getError(state.value, members)
-      const valid = errors.length === 0
-
-      if (parent) parent.report(this.name, {...state, errors, members, valid})
-      return {errors, members, valid}
+    this.setState(state => ({...state,
+      members  : {...state.members, [name]: member},
+      pristine : explicit ? state.pristine : (state.pristine && pristine)
+    }), () => {
+      if (!explicit) this._validate(this.state.value, this.state.members)
     })
   }
 
   onLeave = name => {
-    if (!this.state.members[name]) return
-    const members = {...this.state.members}
-    delete members[name]
-    this.setState({members})
+    const {explicit} = this.props
+    const {members} = this.state
+
+    if (!members[name]) return
+
+    const nextMembers = {...members}
+    delete nextMembers[name]
+
+    this.setState({
+      members: nextMembers
+    }, () => {
+      if (!explicit) this._validate(this.state.value, this.state.members)
+    })
   }
 
   componentDidMount () {
-    const {parent} = this.props
-    if (parent) parent.report(this.name, this.state)
+    const {explicit, valid, value} = this.props
+    if (!explicit && valid === undefined) this._validate(value, {}, true)
   }
 
   componentWillUnmount () {
     const {parent} = this.props
-    if (parent) parent.leave(this.name)
+    parent && parent.leave(this.name)
   }
 
   componentWillReceiveProps (nextProps) {
-    if (
-      !(value in nextProps) ||
-      nextProps.value === this.state.value
-    ) return
+    if (!(value in nextProps) || nextProps.value === this.state.value) return
 
     const {value, parent, onChange} = nextProps
-
-    const errors = this._getError(value)
-    const valid = errors.length === 0
-    const pristine = true
-
-    this.setState({errors, pristine, valid, value})
-
-    onChange(value, valid)
-    if (parent) parent.report(this.name, {...this.state, errors, pristine, valid, value})
+    this._validate(value, this.state.members).then(() => {
+      onChange(this.state.value, this.state.valid)
+      parent && parent.report(this.name, this.state)
+    })
   }
 
   render () {
@@ -121,6 +159,7 @@ class Validate extends Component {
       errors   : this.state.errors,
       members  : this.state.members,
       onChange : this.onChange,
+      pending  : this.state.pending,
       pristine : (!parent || parent.pristine) && this.state.pristine,
       valid    : this.state.valid,
       value    : this.state.value
@@ -128,19 +167,50 @@ class Validate extends Component {
 
     opts.group = {
       pristine : opts.pristine,
-      report   : this.onReport
+      report   : this.onReport,
+      check    : this.check
     }
 
     return render(opts)
   }
 
-  _getError (value, members) {
-    return this.props.validators
-      .reduce((errors, validate) => {
-        const error = validate(value, members || {})
-        if (error !== undefined) errors.push(error + '')
-        return errors
-      }, [])
+  _validate (value, members, pristine) {
+    let isAsync = false
+    const run = ++this._validationRun
+    const {validators, parent} = this.props
+
+    const errors = validators.reduce((errors, validate) => {
+      const error = validate(value, members || {})
+      if (error !== undefined && error !== null) {
+        isAsync = isAsync || !!error.then
+        return errors.concat(error) // either one or Array of errors
+      }
+      return errors
+    }, [])
+
+    if (isAsync) {
+      this.setState({pending: true})
+      return Promise.all(
+        errors.concat(run)
+      ).then(errors => {
+        if (errors.pop() !== this._validationRun) throw aborted
+        this.setState({
+          errors,
+          valid   : errors.length === 0,
+          pending : false
+        }, () => parent && parent.report(this.name, this.state, pristine))
+      }).catch(err => {
+        this.setState({pending: false})
+        if (err === aborted) return
+        warn('Validation failed', err)
+      })
+    } else {
+      this.setState({
+        errors,
+        valid: errors.length === 0
+      }, () => parent && parent.report(this.name, this.state, pristine))
+      return Promise.resolve()
+    }
   }
 }
 

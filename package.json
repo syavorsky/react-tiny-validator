@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --config .dev/webpack.conf.js",
+    "build": "webpack --config .dev/webpack.conf.js",
     "test": "npm run test:eslint",
     "test:eslint": "eslint index.js .dev"
   },

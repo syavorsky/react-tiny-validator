@@ -22,7 +22,7 @@
     // Normally use:
     //
     // import Validate from 'react-tiny-validator'
-    // import Raact, {Component, PropTypes} from 'react
+    // import React, {Component, PropTypes} from 'react
     // import {render} from 'react-dom'
 
     const {default:Validate} = window['react-tiny-validator']
@@ -35,16 +35,16 @@
     }
 
     const emaillike = value => {
-      if (!/\w+@\w+/.test(value)) return 'Does not look like email'
+      if (!/\w+@\w+/.test(value)) return new Promise(resolve => setTimeout(resolve, 500, 'Does not look like email'))
     }
 
     const App = () => (
       <div>
         <p>Validated as you type</p>
-        <Validate
-          onChange={goodValue => this.setState({email: goodValue})}
+        <Validate valid={false}
+          onChange={(value, valid) => console.log('value "%s" is valid', value, valid)}
           validators={[minlength(5), emaillike]}>
-          {({value, onChange, pristine, valid, errors}) => (
+          {({value, onChange, pristine, valid, errors, pending}) => (
             <div>
               <h2 className={valid ? 'valid' : 'invalid'}>
                 value : <b>{JSON.stringify(value)}</b>
@@ -54,6 +54,9 @@
                 value={value}
                 onChange={e => onChange(e.target.value)} />
               <p>Is pristine: {pristine ? 'YES' : 'NO'}</p>
+              {pending && (
+                <p>Pending...</p>
+              )}
               {!pristine && !valid && (
                 <ul className="invalid">
                   {errors.map(error => <li key={error}>{error}</li>)}

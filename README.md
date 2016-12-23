@@ -1,7 +1,7 @@
 # react-tiny-validator
 
 Handy validation helper for React. What makes it different:
-- Extremely flexible, not introducing any markup, not making code assumptions
+- Extremely flexible, not introducing any markup, not making code assumptions, not requiring any state bindings
 - Allows to validate a single input as well as build a complex set of fields
 - Supports sync/async validation flows
 - Completely separate from input components and agnostic of input type

@@ -22,7 +22,7 @@
     // Normally use:
     //
     // import Validate from 'react-tiny-validator'
-    // import Raact, {Component, PropTypes} from 'react
+    // import React, {Component, PropTypes} from 'react
     // import {render} from 'react-dom'
 
     const {default:Validate} = window['react-tiny-validator']
@@ -31,27 +31,31 @@
     const {render} = window['react-dom']
 
     const required = name => value => {
-      if (!value) `${name} is required`
+      if (!value) return `${name} is required`
     }
 
     const App = () => (
       <Validate>
         {({errors, valid, check, pristine, group, members}) => {
+          // we don't know wich memebers are already mounted by this point
           const {first, middle, last} = members
-          const fullName = valid ? `${first.value} ${middle.value} ${last.value}` : ''
-          console.log('errors', errors)
+          const fullName = valid ? [
+            first && first.value,
+            middle && middle.value,
+            last && last.value
+          ].join(' ') : ''
 
           return (
             <form onSubmit={e => {
               e.preventDefault()
-              if (check()) alert('Submitting: ' + fullName)
+              check().then(valid => valid && alert('Submitting: ' + fullName))
             }}>
               <h2 className={pristine ? '' : (valid ? 'valid' : 'invalid')}>
                 Full name : <b>{JSON.stringify(fullName)}</b>
               </h2>
               <p>Feel all fields, validate on Submit</p>
               <Validate name="first" parent={group}
-                value={''} validators={[required('First name')]}>
+                validators={[required('First name')]}>
                 {({value, onChange}) => (
                   <input type="text"
                     placeholder="First name"
@@ -59,7 +63,7 @@
                 )}
               </Validate>
               <Validate name="middle" parent={group}
-                value={''} validators={[required('Middle name')]}>
+                validators={[required('Middle name')]}>
                 {({value, onChange}) => (
                   <input type="text"
                     placeholder="Middle name"
@@ -67,7 +71,7 @@
                 )}
               </Validate>
               <Validate name="last" parent={group}
-                value={''} validators={[required('Last name')]}>
+                validators={[required('Last name')]}>
                 {({value, onChange}) => (
                   <input type="text"
                     placeholder="Last name"
