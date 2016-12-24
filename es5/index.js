@@ -1,68 +1,390 @@
-(function webpackUniversalModuleDefinition(root, factory) {
-	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("react"));
-	else if(typeof define === 'function' && define.amd)
-		define(["react"], factory);
-	else if(typeof exports === 'object')
-		exports["react-tiny-validator"] = factory(require("react"));
-	else
-		root["react-tiny-validator"] = factory(root["react"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__) {
-return /******/ (function(modules) { // webpackBootstrap
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
+(function (global, factory) {
+  if (typeof define === "function" && define.amd) {
+    define(['module', 'exports', 'react'], factory);
+  } else if (typeof exports !== "undefined") {
+    factory(module, exports, require('react'));
+  } else {
+    var mod = {
+      exports: {}
+    };
+    factory(mod, mod.exports, global.React);
+    global.Validate = mod.exports;
+  }
+})(this, function (module, exports, _react) {
+  'use strict';
 
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
 
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId])
-/******/ 			return installedModules[moduleId].exports;
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
 
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			exports: {},
-/******/ 			id: moduleId,
-/******/ 			loaded: false
-/******/ 		};
+    return obj;
+  }
 
-/******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+  var _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
 
-/******/ 		// Flag the module as loaded
-/******/ 		module.loaded = true;
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
 
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
+    return target;
+  };
+
+  function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+
+  var _createClass = function () {
+    function defineProperties(target, props) {
+      for (var i = 0; i < props.length; i++) {
+        var descriptor = props[i];
+        descriptor.enumerable = descriptor.enumerable || false;
+        descriptor.configurable = true;
+        if ("value" in descriptor) descriptor.writable = true;
+        Object.defineProperty(target, descriptor.key, descriptor);
+      }
+    }
+
+    return function (Constructor, protoProps, staticProps) {
+      if (protoProps) defineProperties(Constructor.prototype, protoProps);
+      if (staticProps) defineProperties(Constructor, staticProps);
+      return Constructor;
+    };
+  }();
+
+  function _possibleConstructorReturn(self, call) {
+    if (!self) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+
+    return call && (typeof call === "object" || typeof call === "function") ? call : self;
+  }
+
+  function _inherits(subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+    }
+
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+  }
+
+  function _toConsumableArray(arr) {
+    if (Array.isArray(arr)) {
+      for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {
+        arr2[i] = arr[i];
+      }
+
+      return arr2;
+    } else {
+      return Array.from(arr);
+    }
+  }
+
+  var defaultName = function defaultName() {
+    return 'validate-' + (Math.random() + '').slice(2, 7);
+  };
+
+  var warn = function warn() {
+    var _console;
+
+    if (typeof console !== 'undefined' && console.warn) (_console = console).warn.apply(_console, arguments);
+  };
+
+  var missingPromise = function missingPromise() {
+    var msg = ['Missing a Promise binding!', 'You should either have global \'Promise\' available', 'or introduce custom one as \'Validate.usePromise(Promise)\''].join('\n');
+
+    warn(msg);
+    throw new Error('Missing a Promise binding');
+  };
+
+  missingPromise.all = missingPromise;
+
+  var validateMembers = function validateMembers(value, members) {
+    var errors = Object.keys(members).reduce(function (errors, name) {
+      return [].concat(_toConsumableArray(errors), _toConsumableArray(members[name].errors));
+    }, []);
+    return errors;
+  };
+
+  var aborted = new Error('validation aborted');
+
+  var Validate = function (_Component) {
+    _inherits(Validate, _Component);
+
+    function Validate() {
+      var _ref;
+
+      _classCallCheck(this, Validate);
+
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      var _this = _possibleConstructorReturn(this, (_ref = Validate.__proto__ || Object.getPrototypeOf(Validate)).call.apply(_ref, [this].concat(args)));
+
+      _initialiseProps.call(_this);
+
+      var _this$props = _this.props;
+      var name = _this$props.name;
+      var value = _this$props.value;
 
 
-/******/ 	// expose the modules object (__webpack_modules__)
-/******/ 	__webpack_require__.m = modules;
+      _this.name = name || defaultName();
+      _this.state = {
+        value: value,
+        members: {},
+        pristine: true,
+        pending: false,
+        valid: _this.props.value !== undefined ? _this.props.value : true,
+        errors: []
+      };
 
-/******/ 	// expose the module cache
-/******/ 	__webpack_require__.c = installedModules;
+      _this._validationRun = 0;
+      return _this;
+    }
 
-/******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "/es5/";
+    _createClass(Validate, [{
+      key: 'componentDidMount',
+      value: function componentDidMount() {
+        var _props = this.props;
+        var explicit = _props.explicit;
+        var valid = _props.valid;
+        var value = _props.value;
 
-/******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(0);
-/******/ })
-/************************************************************************/
-/******/ ([
-/* 0 */
-/***/ function(module, exports, __webpack_require__) {
+        if (!explicit && valid === undefined) this._validate(value, {}, true);
+      }
+    }, {
+      key: 'componentWillUnmount',
+      value: function componentWillUnmount() {
+        var parent = this.props.parent;
 
-	eval("'use strict';\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\n\nvar _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };\n\nvar _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if (\"value\" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();\n\nvar _react = __webpack_require__(1);\n\nfunction _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }\n\nfunction _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError(\"Cannot call a class as a function\"); } }\n\nfunction _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\"); } return call && (typeof call === \"object\" || typeof call === \"function\") ? call : self; }\n\nfunction _inherits(subClass, superClass) { if (typeof superClass !== \"function\" && superClass !== null) { throw new TypeError(\"Super expression must either be null or a function, not \" + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }\n\nfunction _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }\n\nvar defaultName = function defaultName() {\n  return 'validate-' + (Math.random() + '').slice(2, 7);\n};\n\nvar validateMembers = function validateMembers(value, members) {\n  var errors = Object.keys(members).reduce(function (errors, name) {\n    return [].concat(_toConsumableArray(errors), _toConsumableArray(members[name].errors));\n  }, []);\n  return errors;\n};\n\nvar Validate = function (_Component) {\n  _inherits(Validate, _Component);\n\n  function Validate() {\n    var _ref;\n\n    _classCallCheck(this, Validate);\n\n    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {\n      args[_key] = arguments[_key];\n    }\n\n    var _this = _possibleConstructorReturn(this, (_ref = Validate.__proto__ || Object.getPrototypeOf(Validate)).call.apply(_ref, [this].concat(args)));\n\n    _initialiseProps.call(_this);\n\n    var _this$props = _this.props;\n    var name = _this$props.name;\n    var value = _this$props.value;\n\n\n    _this.name = name || defaultName();\n    _this.state = {\n      value: value,\n      members: {},\n      pristine: true\n    };\n\n    var errors = _this._getError(_this.props.value, {});\n    _this.state.errors = errors;\n    _this.state.valid = errors.length === 0;\n    return _this;\n  }\n\n  _createClass(Validate, [{\n    key: 'componentDidMount',\n    value: function componentDidMount() {\n      var parent = this.props.parent;\n\n      if (parent) parent.report(this.name, this.state);\n    }\n  }, {\n    key: 'componentWillUnmount',\n    value: function componentWillUnmount() {\n      var parent = this.props.parent;\n\n      if (parent) parent.leave(this.name);\n    }\n  }, {\n    key: 'componentWillReceiveProps',\n    value: function componentWillReceiveProps(nextProps) {\n      if (!(value in nextProps) || nextProps.value === this.state.value) return;\n\n      var value = nextProps.value;\n      var parent = nextProps.parent;\n      var onChange = nextProps.onChange;\n\n\n      var errors = this._getError(value, this.state.members);\n      var valid = errors.length === 0;\n      var pristine = true;\n\n      this.setState({ errors: errors, pristine: pristine, valid: valid, value: value });\n\n      onChange(value, valid);\n      if (parent) parent.report(this.name, _extends({}, this.state, { errors: errors, pristine: pristine, valid: valid, value: value }));\n    }\n  }, {\n    key: 'render',\n    value: function render() {\n      var _props = this.props;\n      var parent = _props.parent;\n      var render = _props.children;\n\n      var opts = {\n        name: this.name,\n        check: this.check,\n        errors: this.state.errors,\n        members: this.state.members,\n        onChange: this.onChange,\n        pristine: (!parent || parent.pristine) && this.state.pristine,\n        valid: this.state.valid,\n        value: this.state.value\n      };\n\n      opts.group = {\n        pristine: opts.pristine,\n        report: this.onReport\n      };\n\n      return render(opts);\n    }\n  }, {\n    key: '_getError',\n    value: function _getError(value, members) {\n      return this.props.validators.reduce(function (errors, validate) {\n        var error = validate(value, members || {});\n        return error === undefined ? errors : errors.concat(error);\n      }, []);\n    }\n  }]);\n\n  return Validate;\n}(_react.Component);\n\nValidate.propTypes = {\n  children: _react.PropTypes.func.isRequired,\n  name: _react.PropTypes.string,\n  parent: _react.PropTypes.shape({\n    name: _react.PropTypes.string,\n    onChange: _react.PropTypes.func\n  }),\n  onChange: _react.PropTypes.func,\n  pristine: _react.PropTypes.bool,\n  validators: _react.PropTypes.arrayOf(_react.PropTypes.func),\n  value: _react.PropTypes.any\n};\nValidate.defaultProps = {\n  parent: null,\n  validators: [validateMembers],\n  value: null,\n  onChange: function onChange() {\n    return undefined;\n  }\n};\n\nvar _initialiseProps = function _initialiseProps() {\n  var _this2 = this;\n\n  this.check = function () {\n    _this2.setState({ pristine: false });\n    return _this2.state.valid;\n  };\n\n  this.onChange = function (value) {\n    var silent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;\n    var _props2 = _this2.props;\n    var parent = _props2.parent;\n    var onChange = _props2.onChange;\n\n\n    var errors = _this2._getError(value, _this2.state.members);\n    var valid = errors.length === 0;\n    var pristine = _this2.state.pristine && silent;\n\n    _this2.setState({ errors: errors, pristine: pristine, valid: valid, value: value });\n\n    onChange(value, valid);\n    if (parent) parent.report(_this2.name, _extends({}, _this2.state, { errors: errors, pristine: pristine, valid: valid, value: value }));\n  };\n\n  this.onReport = function (name, member) {\n    var parent = _this2.props.parent;\n\n\n    _this2.setState(function (state) {\n      var members = _extends({}, state.members, _defineProperty({}, name, member));\n      var errors = _this2._getError(state.value, members);\n      var valid = errors.length === 0;\n\n      if (parent) parent.report(_this2.name, _extends({}, state, { errors: errors, members: members, valid: valid }));\n      return { errors: errors, members: members, valid: valid };\n    });\n  };\n\n  this.onLeave = function (name) {\n    if (!_this2.state.members[name]) return;\n    var members = _extends({}, _this2.state.members);\n    delete members[name];\n    _this2.setState({ members: members });\n  };\n};\n\nexports.default = Validate;\n\n/*****************\n ** WEBPACK FOOTER\n ** ./index.js\n ** module id = 0\n ** module chunks = 0\n **/\n//# sourceURL=webpack:///./index.js?");
+        parent && parent.leave(this.name);
+      }
+    }, {
+      key: 'componentWillReceiveProps',
+      value: function componentWillReceiveProps(nextProps) {
+        var _this2 = this;
 
-/***/ },
-/* 1 */
-/***/ function(module, exports) {
+        if (!(value in nextProps) || nextProps.value === this.state.value) return;
 
-	eval("module.exports = __WEBPACK_EXTERNAL_MODULE_1__;\n\n/*****************\n ** WEBPACK FOOTER\n ** external \"react\"\n ** module id = 1\n ** module chunks = 0\n **/\n//# sourceURL=webpack:///external_%22react%22?");
+        var value = nextProps.value;
+        var parent = nextProps.parent;
+        var onChange = nextProps.onChange;
 
-/***/ }
-/******/ ])
+        this._validate(value, this.state.members).then(function () {
+          onChange(_this2.state.value, _this2.state.valid);
+          parent && parent.report(_this2.name, _this2.state);
+        });
+      }
+    }, {
+      key: 'render',
+      value: function render() {
+        var _props2 = this.props;
+        var parent = _props2.parent;
+        var render = _props2.children;
+
+        var opts = {
+          name: this.name,
+          check: this.check,
+          errors: this.state.errors,
+          members: this.state.members,
+          onChange: this.onChange,
+          pending: this.state.pending,
+          pristine: (!parent || parent.pristine) && this.state.pristine,
+          valid: this.state.valid,
+          value: this.state.value
+        };
+
+        opts.group = {
+          pristine: opts.pristine,
+          report: this.onReport,
+          check: this.check
+        };
+
+        return render(opts);
+      }
+    }, {
+      key: '_validate',
+      value: function _validate(value, members, pristine) {
+        var _this3 = this;
+
+        var isAsync = false;
+        var run = ++this._validationRun;
+        var _props3 = this.props;
+        var validators = _props3.validators;
+        var parent = _props3.parent;
+
+
+        var errors = validators.reduce(function (errors, validate) {
+          var error = validate(value, members || {});
+          if (error !== undefined && error !== null) {
+            isAsync = isAsync || !!error.then;
+            return errors.concat(error); // either one or Array of errors
+          }
+          return errors;
+        }, []);
+
+        if (isAsync) {
+          this.setState({ pending: true });
+          return Promise.all(errors.concat(run)).then(function (errors) {
+            if (errors.pop() !== _this3._validationRun) throw aborted;
+            _this3.setState({
+              errors: errors,
+              valid: errors.length === 0,
+              pending: false
+            }, function () {
+              return parent && parent.report(_this3.name, _this3.state, pristine);
+            });
+          }).catch(function (err) {
+            _this3.setState({ pending: false });
+            if (err === aborted) return;
+            warn('Validation failed', err);
+          });
+        } else {
+          this.setState({
+            errors: errors,
+            valid: errors.length === 0
+          }, function () {
+            return parent && parent.report(_this3.name, _this3.state, pristine);
+          });
+          return Promise.resolve();
+        }
+      }
+    }]);
+
+    return Validate;
+  }(_react.Component);
+
+  Validate.propTypes = {
+    children: _react.PropTypes.func.isRequired,
+    explicit: _react.PropTypes.bool,
+    name: _react.PropTypes.string,
+    parent: _react.PropTypes.shape({
+      name: _react.PropTypes.string,
+      onChange: _react.PropTypes.func
+    }),
+    onChange: _react.PropTypes.func,
+    pristine: _react.PropTypes.bool,
+    valid: _react.PropTypes.bool,
+    validators: _react.PropTypes.arrayOf(_react.PropTypes.func),
+    value: _react.PropTypes.any
+  };
+  Validate.defaultProps = {
+    parent: null,
+    validators: [validateMembers],
+    value: '',
+    explicit: false,
+    onChange: function onChange() {
+      return undefined;
+    }
+  };
+  Validate.Promise = typeof Promise === 'undefined' ? missingPromise : Promise;
+
+  Validate.usePromise = function (Promise) {
+    Validate.Promise = Promise;
+    return Validate;
+  };
+
+  var _initialiseProps = function _initialiseProps() {
+    var _this4 = this;
+
+    this.check = function () {
+      _this4.setState({ pristine: false });
+      var _state = _this4.state;
+      var value = _state.value;
+      var members = _state.members;
+
+      return _this4._validate(value, members).then(function () {
+        _this4.props.onChange(value, _this4.state.valid);
+        return _this4.state.valid;
+      });
+    };
+
+    this.onChange = function (value) {
+      var silent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var _props4 = _this4.props;
+      var explicit = _props4.explicit;
+      var onChange = _props4.onChange;
+
+      if (explicit) return _this4.setState({ value: value });
+
+      var _state2 = _this4.state;
+      var pristine = _state2.pristine;
+      var members = _state2.members;
+
+
+      _this4.setState(function (state) {
+        return _extends({}, state, {
+          value: value,
+          pristine: pristine && silent
+        });
+      }, function () {
+        _this4._validate(value, members).then(function () {
+          onChange(_this4.state.value, _this4.state.valid);
+        });
+      });
+    };
+
+    this.onReport = function (name, member, pristine) {
+      var explicit = _this4.props.explicit;
+
+
+      _this4.setState(function (state) {
+        return _extends({}, state, {
+          members: _extends({}, state.members, _defineProperty({}, name, member)),
+          pristine: explicit ? state.pristine : state.pristine && pristine
+        });
+      }, function () {
+        if (!explicit) _this4._validate(_this4.state.value, _this4.state.members);
+      });
+    };
+
+    this.onLeave = function (name) {
+      var explicit = _this4.props.explicit;
+      var members = _this4.state.members;
+
+
+      if (!members[name]) return;
+
+      var nextMembers = _extends({}, members);
+      delete nextMembers[name];
+
+      _this4.setState({
+        members: nextMembers
+      }, function () {
+        if (!explicit) _this4._validate(_this4.state.value, _this4.state.members);
+      });
+    };
+  };
+
+  exports.default = Validate;
+  module.exports = exports['default'];
 });
-;
+
+//# sourceMappingURL=index.js.map

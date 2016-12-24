@@ -4,8 +4,10 @@
   "description": "Tiny generic validaton helper for React",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server --config .dev/webpack.conf.js",
-    "build": "webpack --config .dev/webpack.conf.js",
+    "start": "npm-run-all --parallel start:build start:serve",
+    "start:serve": "http-server -p 9999 .",
+    "start:build": "babel index.js --out-file es5/index.js --source-maps",
+    "build": "babel index.js --watch --out-file es5/index.js --source-maps",
     "test": "npm run test:eslint",
     "test:eslint": "eslint index.js .dev"
   },
@@ -29,9 +31,12 @@
     "react-dom": "^15.0.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.18.0",
     "babel-core": "^6.17.0",
     "babel-eslint": "^7.0.0",
     "babel-loader": "^6.2.5",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-es2015-modules-umd": "^6.18.0",
     "babel-preset-es2015": "^6.16.0",
     "babel-preset-react": "^6.16.0",
     "babel-preset-stage-0": "^6.16.0",
@@ -41,11 +46,9 @@
     "eslint-plugin-promise": "^3.3.0",
     "eslint-plugin-react": "^6.4.1",
     "eslint-plugin-standard": "^2.0.1",
-    "html-webpack-plugin": "^2.24.0",
-    "pre-push": "^0.1.1",
-    "webpack": "^1.13.2",
-    "webpack-dev-server": "^1.16.2",
-    "webpack-notifier": "^1.4.1"
+    "http-server": "^0.9.0",
+    "npm-run-all": "^3.1.2",
+    "pre-push": "^0.1.1"
   },
   "pre-push": {
     "run": "test",
