@@ -1,9 +1,15 @@
-import {Component, PropTypes} from 'react'
+/* global __VALIDATOR_WARN__ */
+
+import {Component, PropTypes, isValidElement} from 'react'
 
 const defaultName = () => 'validate-' + (Math.random() + '').slice(2, 7)
 
 const warn = (...args) => {
-  if (typeof console !== 'undefined' && console.warn) console.warn(...args)
+  if (typeof __VALIDATOR_WARN__ !== 'undefined') {
+    __VALIDATOR_WARN__(...args)
+  } else if (typeof console !== 'undefined' && console.warn) {
+    console.warn(...args)
+  }
 }
 
 const missingPromise = () => {
@@ -72,7 +78,7 @@ class Validate extends Component {
       members  : {},
       pristine : true,
       pending  : false,
-      valid    : this.props.value !== undefined ? this.props.value : true,
+      valid    : this.props.valid !== undefined ? this.props.valid : true,
       errors   : []
     }
 
@@ -171,11 +177,20 @@ class Validate extends Component {
       check    : this.check
     }
 
-    return render(opts)
+    if (!render || !render.call) {
+      throw new Error(
+        'Missing a render function. Expected ' +
+        '<Validate>{options => element}</Validate'
+      )
+    }
+
+    const content = render(opts)
+    return isValidElement(content) ? content : null
   }
 
   _validate (value, members, pristine) {
     let isAsync = false
+    const Promise = Validate.Promise
     const run = ++this._validationRun
     const {validators, parent} = this.props
 
