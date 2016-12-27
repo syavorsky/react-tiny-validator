@@ -1,4 +1,4 @@
-.tmp
-.dev
-.git
+.*
+index.html
+examples
 node_modules
