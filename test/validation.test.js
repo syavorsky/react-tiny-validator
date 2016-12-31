@@ -95,4 +95,185 @@ describe('validation mechanics', function () {
       done()
     }, 5)
   })
+
+  it('runs default member validation', function (done) {
+    mount(
+      <Validate>
+        {_ => {
+          props = _
+          return (
+            <div>
+              <Validate name='member1' parent={_.group}>{() => <span />}</Validate>
+              <Validate name='member2' parent={_.group}>{() => <span />}</Validate>
+            </div>
+          )
+        }}
+      </Validate>
+    )
+    setTimeout(() => {
+      expect(props.errors).to.eql([])
+      expect(props.members).to.have.keys({
+        member1 : {valid: true, errors: []},
+        member2 : {valid: true, errors: []}
+      })
+      done()
+    }, 5)
+  })
+
+  it('passes members data to validators', function (done) {
+    let members
+    mount(
+      <Validate validators={[(_, _members) => { members = _members }]}>
+        {_ => {
+          props = _
+          return (
+            <div>
+              <Validate name='member1'
+                parent={_.group}
+                validators={[() => 'member err 1']}>
+                {() => <span />}
+              </Validate>
+              <Validate name='member2'
+                parent={_.group}
+                validators={[() => 'member err 2', () => 'member err 3']}>
+                {() => <span />}
+              </Validate>
+            </div>
+          )
+        }}
+      </Validate>
+    )
+    setTimeout(() => {
+      expect(members).to.have.keys({
+        member1 : {valid: false, errors: ['member err 1']},
+        member2 : {valid: false, errors: ['member err 2', 'member err 3']}
+      })
+      done()
+    }, 5)
+  })
+
+  it('runs sync validation only once', function (done) {
+    let calls = 0
+    mount(
+      <Validate validators={[v => { calls++ }]}>
+        {() => <span />}
+      </Validate>
+    )
+    setTimeout(() => {
+      expect(calls).to.equal(1)
+      done()
+    }, 5)
+  })
+
+  it('runs sync validation only num of members + 1 times', function (done) {
+    let calls = 0
+    mount(
+      <Validate validators={[v => { calls++ }]}>
+        {({group}) => (
+          <div>
+            <Validate name='member1' parent={group}>{() => <span />}</Validate>
+            <Validate name='member2' parent={group}>{() => <span />}</Validate>
+          </div>
+        )}
+      </Validate>
+    )
+    setTimeout(() => {
+      expect(calls).to.equal(3)
+      done()
+    }, 5)
+  })
+
+  it('runs async validation only once', function (done) {
+    let calls = 0
+    const validate = () => new Promise(resolve => {
+      setTimeout(() => {
+        calls++
+        resolve()
+      }, 1)
+    })
+    mount(
+      <Validate validators={[validate]}>{() => <span />}</Validate>
+    )
+    setTimeout(() => {
+      expect(calls).to.equal(1)
+      done()
+    }, 5)
+  })
+
+  it('runs async validation only num of members + 1 times', function (done) {
+    let calls = 0
+    const validate = () => new Promise(resolve => {
+      setTimeout(() => {
+        calls++
+        resolve()
+      }, 1)
+    })
+    mount(
+      <Validate validators={[validate]}>
+        {({group}) => (
+          <div>
+            <Validate name='member1' parent={group}>{() => <span />}</Validate>
+            <Validate name='member2' parent={group}>{() => <span />}</Validate>
+          </div>
+        )}
+      </Validate>
+    )
+    setTimeout(() => {
+      expect(calls).to.equal(3)
+      done()
+    }, 5)
+  })
+
+  it.only('reacts on members addition/removal', function (done) {
+    const runs = []
+
+    class Validators extends React.Component {
+      state = {num: 0}
+      componentDidMount () {
+        const rerender = nums => {
+          console.log('rerender', nums[0])
+          this.setState({num: nums.shift()})
+          if (nums.length) setTimeout(rerender, 5, nums)
+        }
+        rerender([2, 1])
+      }
+      render () {
+        const {num} = this.state
+        const validate = () => {
+          console.log('  validate', num)
+          return `failed on num:${num}`
+        }
+
+        console.log('  render', num)
+        return (
+          <div>
+            {
+              Array.from(Array(num || 0)).map((_, i) => {
+                return (
+                  <Validate key={num + ':' + i} parent={this.props.group}
+                    validators={[validate]}>
+                    {() => <span />}
+                  </Validate>
+                )
+              })
+            }
+          </div>
+        )
+      }
+    }
+
+    mount(
+      <Validate validators={[(val, members) => { runs.push({val, members}) }]}>
+        {({group}) => <Validators goup={group} />}
+      </Validate>
+    )
+
+    // assume [0,2,1], first render will be ran
+    // before first rerender() call
+
+    setTimeout(() => {
+      console.log('--->', runs)
+      done()
+    }, 50)
+  })
 })

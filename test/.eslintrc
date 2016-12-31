@@ -5,6 +5,7 @@
   "globals": {
     "expect": true,
     "mount": true,
+    "React": true,
     "Validate": true
   },
   "rules": {
