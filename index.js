@@ -1,9 +1,17 @@
-import {Component, PropTypes} from 'react'
+/* global __VALIDATOR_WARN__ */
+
+import {Component, PropTypes, isValidElement} from 'react'
 
 const defaultName = () => 'validate-' + (Math.random() + '').slice(2, 7)
 
+const isDefined = v => v !== undefined && v !== null
+
 const warn = (...args) => {
-  if (typeof console !== 'undefined' && console.warn) console.warn(...args)
+  if (typeof __VALIDATOR_WARN__ !== 'undefined') {
+    __VALIDATOR_WARN__(...args)
+  } else if (typeof console !== 'undefined' && console.warn) {
+    console.warn(...args)
+  }
 }
 
 const missingPromise = () => {
@@ -26,8 +34,6 @@ const validateMembers = (value, members) => {
     }, [])
   return errors
 }
-
-const aborted = new Error('validation aborted')
 
 class Validate extends Component {
 
@@ -64,7 +70,14 @@ class Validate extends Component {
   constructor (...args) {
     super(...args)
 
-    const {name, value} = this.props
+    const {children, name, value} = this.props
+
+    if (!children || !children.call) {
+      throw new Error(
+        'Expected props.children to be a function ' +
+        '<Validate>{options => element}</Validate'
+      )
+    }
 
     this.name = name || defaultName()
     this.state = {
@@ -72,7 +85,7 @@ class Validate extends Component {
       members  : {},
       pristine : true,
       pending  : false,
-      valid    : this.props.value !== undefined ? this.props.value : true,
+      valid    : this.props.valid !== undefined ? this.props.valid : true,
       errors   : []
     }
 
@@ -82,7 +95,8 @@ class Validate extends Component {
   check = () => {
     this.setState({pristine: false})
     const {value, members} = this.state
-    return this._validate(value, members).then(() => {
+    return this._validate(value, members).then(complete => {
+      if (!complete) return Promise.reject()
       this.props.onChange(value, this.state.valid)
       return this.state.valid
     })
@@ -98,7 +112,8 @@ class Validate extends Component {
       value,
       pristine: pristine && silent
     }), () => {
-      this._validate(value, members).then(() => {
+      this._validate(value, members).then(complete => {
+        if (!complete) return
         onChange(this.state.value, this.state.valid)
       })
     })
@@ -145,7 +160,8 @@ class Validate extends Component {
     if (!(value in nextProps) || nextProps.value === this.state.value) return
 
     const {value, parent, onChange} = nextProps
-    this._validate(value, this.state.members).then(() => {
+    this._validate(value, this.state.members).then(complete => {
+      if (!complete) return
       onChange(this.state.value, this.state.valid)
       parent && parent.report(this.name, this.state)
     })
@@ -171,21 +187,29 @@ class Validate extends Component {
       check    : this.check
     }
 
-    return render(opts)
+    if (!render || !render.call) {
+      throw new Error(
+        'Missing a render function. Expected ' +
+        '<Validate>{options => element}</Validate'
+      )
+    }
+
+    const content = render(opts)
+    return isValidElement(content) ? content : null
   }
 
   _validate (value, members, pristine) {
     let isAsync = false
+    const Promise = Validate.Promise
     const run = ++this._validationRun
     const {validators, parent} = this.props
 
     const errors = validators.reduce((errors, validate) => {
       const error = validate(value, members || {})
-      if (error !== undefined && error !== null) {
-        isAsync = isAsync || !!error.then
-        return errors.concat(error) // either one or Array of errors
-      }
-      return errors
+      if (!isDefined(error)) return errors
+
+      isAsync = isAsync || !!error.then
+      return errors.concat(error) // either one or Array of errors
     }, [])
 
     if (isAsync) {
@@ -193,23 +217,25 @@ class Validate extends Component {
       return Promise.all(
         errors.concat(run)
       ).then(errors => {
-        if (errors.pop() !== this._validationRun) throw aborted
+        if (errors.pop() !== this._validationRun) return false
+        errors = errors.filter(isDefined)
         this.setState({
           errors,
           valid   : errors.length === 0,
           pending : false
         }, () => parent && parent.report(this.name, this.state, pristine))
+        return true
       }).catch(err => {
         this.setState({pending: false})
-        if (err === aborted) return
         warn('Validation failed', err)
+        return false
       })
     } else {
       this.setState({
         errors,
         valid: errors.length === 0
       }, () => parent && parent.report(this.name, this.state, pristine))
-      return Promise.resolve()
+      return Promise.resolve(true)
     }
   }
 }

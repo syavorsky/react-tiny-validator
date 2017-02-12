@@ -1,0 +1,14 @@
+{
+  "env": {
+    "mocha": true
+  },
+  "globals": {
+    "expect": true,
+    "mount": true,
+    "React": true,
+    "Validate": true
+  },
+  "rules": {
+    "react/react-in-jsx-scope": 0
+  }
+}
